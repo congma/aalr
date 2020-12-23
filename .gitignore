@@ -4,6 +4,7 @@
 *.tgz
 *.bz2
 *.bzip2
+*.np[yz]
 
 # Object files
 *.[oa]
