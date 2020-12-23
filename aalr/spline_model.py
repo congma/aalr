@@ -70,9 +70,8 @@ class SplineModel:
         kwargs["k"] = 3
         self._kwargs_save = kwargs.copy()
         # Knot interval as specified by the number of knots, unless overridden.
-        N = len(y) // nknots
         if knots_override is None:
-            self.knots = t[max(N // 2, 1)::N]
+            self.knots = np.linspace(t[0], t[-1], int(nknots) + 2)[1:-1]
         else:
             self.knots = np.asarray(knots_override, dtype=float)
         if w is None:
