@@ -56,18 +56,19 @@ class SplineModel:
             **spline_args: Additional keyword arguments to be passed to
                            scipy.interpolate.LSQUnivariateSpline
 
-            Notice that the parameter ``k`` is fixed to be 3 (cannot be changed
-            by spline_args) and ``ext`` re-defaults to "const" (can be changed
-            by spline_args).
+            Notice that the parameter ``ext`` re-defaults to "const" (can be
+            changed by spline_args).
         """
         assert len(np.shape(t)) == 1
         assert len(np.shape(y)) == 1
         assert len(t) == len(y)
-        # Fix the parameter value for "k" but not others, and re-default to
-        # "const" for out of bound values unless explicitly overridden.
-        kwargs = dict(ext="const")
+        # Re-default "ext" to "const" for out of bound values unless explicitly
+        # overridden. The other keyword parameters' values are a copy of the
+        # defaults to LSQUnivariateSpline, initialized manually because there's
+        # no documented way to extract such from an initialized
+        # LSQUnivariateSpline instance.
+        kwargs = dict(ext="const", k=3, bbox=[None, None])
         kwargs.update(spline_args)
-        kwargs["k"] = 3
         self._kwargs_save = kwargs.copy()
         # Knot interval as specified by the number of knots, unless overridden.
         if knots_override is None:
@@ -124,7 +125,7 @@ class SplineModel:
     def __call__(self, t):
         return self._spr(t)
 
-    def refine(self, target_d: int = 1, maxiter: int = 50):
+    def refine(self, target_d: int = 1, maxiter: int = 50, **predicate_args):
         """Perform the refinement fit that iteratively exclude outliers based
         on the ``inlier_predicate`` method until convergence is achieved.
 
@@ -132,6 +133,8 @@ class SplineModel:
             target_d : Tolerance of the Hamming distance for mask convergence
                        (integer, default 1)
             maxiter : Maximum number of iterations (integer, default 50)
+            **predicate_args : additional keyword arguments passed to the
+                               instance's inlier_predicate() method
 
         Return values:
             res : A namedtuple with the following records:
@@ -152,7 +155,8 @@ class SplineModel:
                                ("status", "message", "niter", "dfinal"))
         niter = 0
         while niter <= maxiter:
-            w_post_pred = self.inlier_predicate(self.t, self.y)
+            w_post_pred = self.inlier_predicate(self.t, self.y,
+                                                **predicate_args)
             dxor = dist(w_post_pred, self.w)
             if dxor <= target_d:
                 result = FitResult(0, "Converged", niter, dxor)
