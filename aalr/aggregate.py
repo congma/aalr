@@ -34,7 +34,9 @@ def knot_shift_aggregate(model,
     w = model.w.copy()
     for m in shifted_models:
         w *= m.w
-    model_new = SplineModel(model.t, model.y, w=w, **model._kwargs_save)
+    model_new = SplineModel(model.t, model.y, w=w,
+                            knots_override=model.knots,
+                            **model._kwargs_save)
     model_agg = model_new.cure_knots()
     model_agg.refine(**refine_args)
     return model_agg
